@@ -13,6 +13,11 @@ vi.mock("next/dist/server/web/spec-extension/adapters/request-cookies", () => ({
 vi.mock("@/components/auth", () => ({
   getAuthToken: vi.fn().mockResolvedValue(null),
 }));
+vi.mock("@/components/internal-api-fetcher", () => ({
+  fetchInternalApi: vi.fn().mockImplementation(async (endpointPath: string) => {
+    return fetch(`https://mock-internal-api${endpointPath}`);
+  }),
+}));
 
 import { fetchLocationsData } from "@/components/streetlives-api-service";
 
