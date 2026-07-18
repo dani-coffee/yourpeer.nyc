@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-import { fetchInternalApi } from './internal-api-fetcher';
+import { fetchInternalApi } from "./internal-api-fetcher";
 import _ from "underscore";
 import {
   AMENITIES_PARAM,
@@ -162,7 +162,7 @@ export async function fetchLocationsData<T extends SimplifiedLocationData>({
     }
   }
 
-  const endpointPath = query_url.replace(NEXT_PUBLIC_GO_GETTA_PROD_URL!, '');
+  const endpointPath = query_url.replace(NEXT_PUBLIC_GO_GETTA_PROD_URL!, "");
   const gogetta_response = await fetchInternalApi(endpointPath);
   if (gogetta_response.status !== 200) {
     if (gogetta_response.status === 404) {
@@ -605,9 +605,8 @@ export async function getTaxonomies(
   category: Category,
   parsedSearchParams: YourPeerParsedRequestParams,
 ): Promise<TaxonomiesResult> {
-
   const taxonomyResponse = (
-    await fetchInternalApi('/taxonomy').then(
+    await fetchInternalApi("/taxonomy").then(
       (response: Response) => response.json() as unknown as TaxonomyResponse[],
     )
   ).flatMap((taxonomyResponse: TaxonomyResponse) =>
