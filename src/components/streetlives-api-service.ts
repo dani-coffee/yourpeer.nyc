@@ -33,10 +33,9 @@ import {
   ScheduleData,
   setIntersection,
   SHELTER_PARAM,
-  SHELTER_PARAM_FAMILY_VALUE,
-  SHELTER_PARAM_SINGLE_VALUE,
-  SHELTER_PARAM_YOUTH_VALUE,
+  getShelterTaxonomies,
   SimplifiedLocationData,
+  StreetviewData,
   Taxonomy,
   TaxonomyCategory,
   TaxonomyResponse,
@@ -70,6 +69,7 @@ export async function fetchLocationsData<T extends SimplifiedLocationData>({
   membershipRequired,
   open = false,
   search = undefined,
+  aiSearch = false,
   location_fields_only,
   age = undefined,
   ageMax = undefined,
@@ -88,6 +88,7 @@ export async function fetchLocationsData<T extends SimplifiedLocationData>({
   membershipRequired?: boolean;
   open?: boolean | null;
   search?: string | null;
+  aiSearch?: boolean;
   location_fields_only?: boolean;
   age?: number | null;
   ageMin?: number | null;
@@ -139,7 +140,8 @@ export async function fetchLocationsData<T extends SimplifiedLocationData>({
   }
 
   if (search) {
-    query_url += `&searchString=${search}`;
+    const searchParamName = aiSearch ? "naturalLanguageQuery" : "searchString";
+    query_url += `&${searchParamName}=${encodeURIComponent(search)}`;
   }
 
   if (open) {
@@ -205,6 +207,7 @@ export async function getSimplifiedLocationData({
   membershipRequired,
   open = false,
   search = undefined,
+  aiSearch = false,
   age = undefined,
   ageMin = undefined,
   ageMax = undefined,
@@ -219,6 +222,7 @@ export async function getSimplifiedLocationData({
   membershipRequired?: boolean;
   open?: boolean | null;
   search?: string | null;
+  aiSearch?: boolean;
   age?: number | null;
   ageMin?: number | null;
   ageMax?: number | null;
@@ -234,6 +238,7 @@ export async function getSimplifiedLocationData({
       membershipRequired,
       open,
       search,
+      aiSearch,
       age,
       ageMin,
       ageMax,
@@ -253,6 +258,7 @@ export async function getFullLocationData({
   membershipRequired,
   open = false,
   search = undefined,
+  aiSearch = false,
   age = undefined,
   ageMax = undefined,
   ageMin = undefined,
@@ -270,6 +276,7 @@ export async function getFullLocationData({
   membershipRequired: boolean;
   open?: boolean | null;
   search?: string | null;
+  aiSearch?: boolean;
   age?: number | null;
   ageMin?: number | null;
   ageMax?: number | null;
@@ -288,6 +295,7 @@ export async function getFullLocationData({
     membershipRequired,
     open,
     search,
+    aiSearch,
     sortBy,
     age,
     ageMax,
@@ -420,6 +428,49 @@ function filter_services_by_name(
   return { services };
 }
 
+/**
+ * Parses a legacy Google Maps Street View URL into a StreetviewData object.
+ * Used as a backward-compatible fallback when the API still returns `streetview_url`
+ * instead of the structured `Streetview` field.
+ *
+ * URL shape (Google Maps): https://www.google.com/maps/@lat,lng,3a,75y,90h,88t/data=...!1sPANO_ID!...
+ *   - @lat,lng    → lat / lng
+ *   - 75y         → fov
+ *   - 90h         → heading
+ *   - 88t         → pitch
+ *   - !1sPANO_ID  → pano_id
+ */
+function safeDecodeURIComponent(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
+export function parseStreetviewUrl(
+  url: string | null | undefined,
+): StreetviewData | null {
+  if (!url) return null;
+
+  const latLngMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  const headingMatch = url.match(/,(\d+(?:\.\d+)?)h/);
+  const pitchMatch = url.match(/,(\d+(?:\.\d+)?)t/);
+  const fovMatch = url.match(/,(\d+(?:\.\d+)?)y/);
+  const panoMatch = url.match(/!1s([^!]+)/);
+
+  if (!latLngMatch && !panoMatch) return null;
+
+  return {
+    pano_id: panoMatch ? safeDecodeURIComponent(panoMatch[1]) : null,
+    lat: latLngMatch ? parseFloat(latLngMatch[1]) : null,
+    lng: latLngMatch ? parseFloat(latLngMatch[2]) : null,
+    heading: headingMatch ? parseFloat(headingMatch[1]) : null,
+    pitch: pitchMatch ? parseFloat(pitchMatch[1]) : null,
+    fov: fovMatch ? parseFloat(fovMatch[1]) : null,
+  };
+}
+
 export function map_gogetta_to_yourpeer(
   d: FullLocationData | LocationDetailData,
   is_location_detail: boolean,
@@ -470,7 +521,8 @@ export function map_gogetta_to_yourpeer(
       type: phone["type"],
     })),
     url: d["Organization"]["url"],
-    streetview_url: d["streetview_url"],
+    streetview:
+      d["Streetview"] ?? parseStreetviewUrl(d["streetview_url"]) ?? null,
     partners: d["Organization"]["partners"],
     accommodation_services: filter_services_by_name(
       d,
@@ -725,40 +777,12 @@ export async function getTaxonomies(
       //     query += " and t.name = 'Families' and t.parent_name = 'Shelter'"
       // else:
       //     query += " and t.name = 'Shelter'"
-      switch (parsedSearchParams[SHELTER_PARAM]) {
-        case null:
-          taxonomies = taxonomyResponse.flatMap((r) =>
-            r.name === parentTaxonomyName ? [r as Taxonomy] : [],
-          );
-          break;
-        case SHELTER_PARAM_FAMILY_VALUE:
-          taxonomies = taxonomyResponse.flatMap((r) =>
-            !r.children
-              ? []
-              : r.children.filter(
-                  (t) =>
-                    t.parent_name === parentTaxonomyName &&
-                    t.name === "Families",
-                ),
-          );
-          break;
-        case SHELTER_PARAM_YOUTH_VALUE:
-          taxonomies = taxonomyResponse.flatMap((r) =>
-            r.name === parentTaxonomyName ? [r as Taxonomy] : [],
-          );
-          break;
-        case SHELTER_PARAM_SINGLE_VALUE:
-          taxonomies = taxonomyResponse.flatMap((r) =>
-            !r.children
-              ? []
-              : r.children.filter(
-                  (t) =>
-                    t.parent_name === parentTaxonomyName &&
-                    t.name === "Single Adult",
-                ),
-          );
-          break;
-      }
+      taxonomies = getShelterTaxonomies(
+        taxonomyResponse,
+        parentTaxonomyName,
+        parsedSearchParams[SHELTER_PARAM],
+      );
+      break;
   }
 
   return {
