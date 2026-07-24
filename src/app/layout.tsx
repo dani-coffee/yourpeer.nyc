@@ -7,7 +7,7 @@
 import { LanguageTranslationProvider } from "@/components/language-translation-context";
 import "./globals.css";
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { CookiesProvider } from "next-client-cookies/server";
 import Script from "next/script";
 import { Toaster } from "sonner";
@@ -17,6 +17,10 @@ import { inter } from "./fonts";
 
 export const viewport: Viewport = {
   themeColor: "#FFD54F",
+};
+
+export const metadata: Metadata = {
+  manifest: "/manifest.webmanifest",
 };
 
 const GOOGLE_ANALYTICS_MEASUREMENT_ID = process.env
