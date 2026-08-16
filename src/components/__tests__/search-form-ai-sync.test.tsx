@@ -65,6 +65,13 @@ vi.mock("next/dist/server/web/spec-extension/adapters/request-cookies", () => ({
   ReadonlyRequestCookies: class {},
 }));
 
+// SearchForm renders outside a LanguageTranslationProvider in these tests, so
+// stub out TranslatableText (and its next-client-cookies dependency) with a
+// plain passthrough.
+vi.mock("@/components/translatable-text", () => ({
+  TranslatableText: ({ text }: { text: string }) => text,
+}));
+
 // doSearchSubmit calls window["gtag"]; provide a no-op so tests don't throw.
 Object.defineProperty(window, "gtag", { value: vi.fn(), writable: true });
 
