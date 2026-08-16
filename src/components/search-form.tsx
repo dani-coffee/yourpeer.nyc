@@ -7,7 +7,8 @@
 "use client";
 
 import { useFilters, useViewStore } from "@/lib/store";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { SparklesIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { TranslatableText } from "@/components/translatable-text";
 import {
   ReadonlyURLSearchParams,
   usePathname,
@@ -293,13 +294,14 @@ export default function SearchForm() {
           onClick={toggleAiSearch}
           id="ai_search_toggle"
           title={aiSearchEnabled ? "AI Search on" : "AI Search off"}
-          className={`flex-shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded border transition-colors ${
+          className={`flex-shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border transition-all duration-200 hover:shadow-[0_0_10px_2px_rgba(255,220,0,0.6)] ${
             aiSearchEnabled
               ? "bg-primary text-black border-primary"
               : "bg-white text-gray-400 border-gray-300"
           }`}
         >
-          AI
+          <SparklesIcon className="w-3.5 h-3.5" />
+          <TranslatableText text="AI mode" />
         </button>
         {search ? (
           <button
