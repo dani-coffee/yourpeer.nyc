@@ -98,6 +98,7 @@ const translations: Record<string, string> = {
   Casual: "Повседневная",
   Professional: "Рабочая",
   "Requirement type": "Тип условия ограничивающего доступ к услуге",
+  "AI mode": "Режим ИИ",
   "No requirements": "Услуга доступна всем без ограничений",
   "Referral letter": "Письмо-направление",
   "You must bring a letter from another service provider stating that you require this service.":
