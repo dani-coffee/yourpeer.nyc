@@ -52,10 +52,13 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command:
-        "NEXT_PUBLIC_GO_GETTA_PROD_URL=http://localhost:4000 npm run dev -- --port 3000",
+      command: "npm run dev -- --port 3000",
       url: "http://localhost:3000",
       reuseExistingServer: !process.env.CI,
+      env: {
+        NEXT_PUBLIC_GO_GETTA_PROD_URL: "http://localhost:4000",
+        IS_PLAYWRIGHT_E2E: "true",
+      },
     },
   ],
 });

@@ -19,6 +19,11 @@ vi.mock("next/dist/server/web/spec-extension/adapters/request-cookies", () => ({
 vi.mock("@/components/auth", () => ({
   getAuthToken: vi.fn(async () => null),
 }));
+vi.mock("@/components/internal-api-fetcher", () => ({
+  fetchInternalApi: vi.fn().mockImplementation(async (endpointPath: string) => {
+    return fetch(`http://test-api.local${endpointPath}`);
+  }),
+}));
 
 const API_BASE = "http://test-api.local";
 
